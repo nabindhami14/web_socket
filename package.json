@@ -3,14 +3,21 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon src/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "axios": "^1.7.7",
     "express": "^4.21.1",
+    "pino": "^9.5.0",
+    "pino-elasticsearch": "^8.1.0",
+    "winston": "^3.16.0",
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "pino-pretty": "^11.3.0"
   }
 }
