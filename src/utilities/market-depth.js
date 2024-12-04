@@ -4,7 +4,9 @@ const { URL, HEADERS, MARKET_DEPTH_START_PAYLOAD } = require("../config");
 const logger = require("../config/logger");
 
 const MarketDepthWS = () => {
-  const ids = [131,132,133,134,135];
+  const ids = [131, 
+    // 132, 133, 134, 135
+  ];
 
   ids.forEach((id) => {
     const payload = MARKET_DEPTH_START_PAYLOAD(id);
@@ -17,6 +19,7 @@ const MarketDepthWS = () => {
     // );
 
     const marketDepthWS = new WebSocketUtility(
+      true,
       "http://localhost:8080",
       { headers: 121 },
       "meropayload",

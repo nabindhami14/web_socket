@@ -5,6 +5,7 @@ const logger = require("../config/logger");
 
 class WebSocketUtility {
   constructor(
+    start,
     url,
     headers,
     payload,
@@ -13,6 +14,7 @@ class WebSocketUtility {
     heartbeatInterval = 87000,
     maxReconnectAttempts = 3
   ) {
+    this.start = start;
     this.url = url;
     this.headers = headers;
     this.payload = payload;
@@ -30,15 +32,19 @@ class WebSocketUtility {
   connect() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
 
-    this.cleanup(); // Clean up before connecting
+    this.cleanup();
     this.ws = new WebSocket(this.url, { headers: this.headers });
 
     this.ws.on("open", () => {
-      logger.info(`OPEN [${this.operation}] WEB_SOCKET CONNECTION`);
+      // logger.info(`OPEN [${this.operation}] WEB_SOCKET CONNECTION`);
       this.isReconnecting = false;
       this.currentReconnectAttempts = 0;
-      this.subscribe();
-      this.startHeartbeat();
+
+      if (this.start) {
+        // MARKET_UTILS.isWSOpenTime
+        this.subscribe();
+        this.startHeartbeat();
+      }
     });
 
     this.ws.on("message", (message) => {
@@ -59,10 +65,24 @@ class WebSocketUtility {
       logger.error(`ERROR [${this.operation}] WEB_SOCKET CONNECTION`, error);
     });
 
-    this.ws.on("close", () => {
-      logger.warn(`CLOSED [${this.operation}] WEB_SOCKET CONNECTION`);
+    this.ws.on("close", (code, reason) => {
+      logger.warn(
+        `CLOSED [${this.operation}] WEB_SOCKET CONNECTION ${code}:${reason}`
+      );
       if (!this.isReconnecting) this.scheduleReconnect();
     });
+
+    if (
+      !this.start &&
+      this.heartbeatTimeout &&
+      this.ws.readyState === WebSocket.OPEN
+    ) {
+      clearInterval(this.heartbeatTimeout);
+      this.heartbeatTimeout = null;
+
+      // this.ws.send(JSON.stringify(this.payload)); // TODO: STOP PAYLOAD
+      this.ws.close(1000, "");
+    }
   }
 
   subscribe() {
@@ -72,11 +92,11 @@ class WebSocketUtility {
   }
 
   startHeartbeat() {
-    clearInterval(this.heartbeatTimeout);
     this.heartbeatTimeout = setInterval(() => {
       if (this.ws.readyState === WebSocket.OPEN) {
+        // &&  MARKET_UTILS.isWSOpenTime &&
         this.ws.send(JSON.stringify(HEARTBEAT_MESSAGE));
-        logger.info(`HEARTBEAT [${this.operation}]`);
+        // logger.info(`HEARTBEAT [${this.operation}]`);
       }
     }, this.heartbeatInterval);
   }
@@ -101,12 +121,13 @@ class WebSocketUtility {
       `SCHEDULED RECONNECT [${this.operation}] - ATTEMPT ${this.currentReconnectAttempts} in ${delay}ms`
     );
 
+    // DO I NEED TO CLEAR INTERVAL HERE AS DURING RECONNECTING IT WILL CLEANUP FIRST
     clearInterval(this.heartbeatTimeout);
 
     setTimeout(() => {
       this.isReconnecting = false; // Reset before attempting to reconnect
       this.connect();
-    }, this.reconnectInterval);
+    }, delay);
   }
 
   cleanup() {

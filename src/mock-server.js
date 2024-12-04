@@ -13,7 +13,7 @@ wss.on("connection", (ws) => {
   clients.add(ws);
   console.log(clients.size)
 
-  ws.send(JSON.stringify({ message: "Welcome to the mock server!" }));
+  // ws.send(JSON.stringify({ message: "Welcome to the mock server!" }));
 
   ws.on("message", (message) => {
     logger.info(`Received message: ${message}`);
